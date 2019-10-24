@@ -4,12 +4,13 @@
 interface CreepMemory {
   role: string;
   room: string;
-  working: boolean;
+  source?: string;
+  building?: boolean;
+  upgrading?: boolean;
 }
 
 interface Memory {
-  uuid: number;
-  log: any;
+  sources: { [room: string]: { [source: string]: number } };
 }
 
 // `global` extension samples
