@@ -7,6 +7,8 @@ interface CreepMemory {
   source?: string;
   building?: boolean;
   upgrading?: boolean;
+  transfering?: boolean;
+  tempRole?: string;
 }
 
 interface Memory {

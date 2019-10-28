@@ -9,7 +9,10 @@ export abstract class Role {
     abstract run(creep: Creep): void;
 
     creeps(): Creep[] {
-        return _.filter(Game.creeps, (creep) => creep.memory.role == this.identifier);
+        return _.filter(Game.creeps, (creep) =>
+            (creep.memory.tempRole == undefined && creep.memory.role == this.identifier) ||
+            creep.memory.tempRole! == this.identifier
+        );
     }
     have(room: Room): number {
         return this.creeps().filter((creep) => creep.memory.room == room.name).length;

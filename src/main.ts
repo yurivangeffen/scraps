@@ -3,11 +3,12 @@ import { Role, bodyCost, setSourceDivision } from "./role";
 import { Harvester } from "./role.harvester";
 import { Upgrader } from "role.upgrader";
 import { Builder } from "role.builder";
+import { BuildManager } from "manager.build";
+import { Name } from "utils/Name"
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
-
   setSourceDivision();
 
   var roles = [
@@ -16,7 +17,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
     new Builder()
   ]
 
-  const spawn = Game.spawns["ROOT"];
+  const spawn = Game.spawns["Spawn1"];
   const room = spawn.room;
 
   var toSpawn: Role[] = [];
@@ -30,32 +31,44 @@ export const loop = ErrorMapper.wrapLoop(() => {
       toSpawn[toSpawn.length] = role;
   });
 
-  var toSwitch: Role[] = [];
-  toSpawn.forEach(role => {
-    if (spawn.energy >= bodyCost(role.body))
-      spawn.spawnCreep(role.body, role.identifier + Game.time, { memory: { role: role.identifier, room: spawn.room.name } })
-    else
-      toSwitch[toSwitch.length] = role;
+  console.log("Spawnables: " + toSpawn.length);
+  var roleToSpawn = toSpawn[0];
+  var maxEnergy = room.energyCapacityAvailable;
+  var cost = roleToSpawn.body.map((e, index) => {
+    var body = roleToSpawn.body.slice(0, index + 1);
+    var c = bodyCost(body);
+    return { body: body, cost: c };
   });
 
-  //TODO: see if we can switch roles
+  for (var i = cost.length - 1; i >= 2; i--) {
+    var possible = cost[i].cost <= maxEnergy;
+    if (possible) {
+      console.log("Want " + roleToSpawn.identifier + ". Parts: " + cost[i].body.length + ". Cost: " + cost[i].cost + ". Possible: " + possible);
+      if (cost[i].cost > room.energyAvailable) {
+        console.log("Not enough energy available: " + room.energyAvailable);
+        break;
+      }
+      var canSpawn = spawn.spawnCreep(
+        cost[i].body,
+        roleToSpawn.identifier + "_" + Name.randomName(),
+        { memory: { role: roleToSpawn.identifier, room: spawn.room.name } }
+      )
+      if (canSpawn != OK)
+        console.log("Couldn't spawn: " + canSpawn);
+      else
+        break;
+    }
+  }
+
+  var buildManager = new BuildManager();
+  if (buildManager.shouldRun())
+    buildManager.run(room.controller!, spawn);
 
   roles.forEach(role => {
     role.creeps().forEach(creep => {
       role.run(creep);
     })
   });
-
-  /*var spawningCreepName = Game.spawns['ROOT']!.spawning!.name;
-  if (spawningCreepName) {
-    var spawningCreep = Game.creeps[spawningCreepName];
-    if (spawningCreep)
-      Game.spawns['ROOT'].room.visual.text(
-        '🛠️' + spawningCreep.memory.role,
-        Game.spawns['ROOT'].pos.x + 1,
-        Game.spawns['ROOT'].pos.y,
-        { align: 'left', opacity: 0.8 });
-  }*/
 
   // Automatically delete memory of missing creeps
   for (const name in Memory.creeps) {

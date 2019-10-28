@@ -5,12 +5,11 @@ interface SourceWorkers {
 }
 
 export class Harvester extends Role {
-
     identifier: string = "harvester";
-    body: BodyPartConstant[] = [WORK, MOVE, CARRY];
+    body: BodyPartConstant[] = [WORK, MOVE, CARRY, WORK, MOVE, CARRY, WORK, MOVE, CARRY, WORK, MOVE, CARRY, WORK, MOVE, CARRY, WORK, MOVE, CARRY, WORK, MOVE, CARRY, WORK, MOVE, CARRY, WORK, MOVE, CARRY, WORK, CARRY];
 
     want(room: Room) {
-        return room.controller!.level * 2;
+        return [0, 4, 8, 4, 3, 2, 2, 2, 2][room.controller!.level];
     }
 
     need(room: Room) {
@@ -18,7 +17,7 @@ export class Harvester extends Role {
     }
 
     max(room: Room) {
-        return 16;
+        return 8;
     }
 
     /** @param {Creep} creep **/
@@ -28,12 +27,18 @@ export class Harvester extends Role {
         var room = Game.rooms[creep.memory.room];
         var targetSource = room.find(FIND_SOURCES).filter(source => source.id == creep.memory.source)[0];
 
-        if (creep.carry.energy < creep.carryCapacity) {
-            if (creep.harvest(targetSource) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(targetSource, { visualizePathStyle: { stroke: '#ffaa00' } });
-            }
+        //TODO: creeps will only transfer once, but we want them
+        // to transfer until empty.
+        if (creep.memory.transfering && creep.carry.energy == 0) {
+            creep.memory.transfering = false;
+            creep.say('🚜');
         }
-        else {
+        if (!creep.memory.transfering && creep.carry.energy == creep.carryCapacity) {
+            creep.memory.transfering = true;
+            creep.say('🏦');
+        }
+
+        if (creep.memory.transfering) {
             var targets = room.find(FIND_STRUCTURES, {
                 filter: (structure) => {
                     return (structure.structureType == STRUCTURE_EXTENSION ||
@@ -51,7 +56,11 @@ export class Harvester extends Role {
                 if (!creep.pos.inRangeTo(spawn, 5))
                     creep.moveTo(spawn);
                 else
-                    creep.say("💤 idle");
+                    creep.memory.tempRole = "builder";
+            }
+        } else {
+            if (creep.harvest(targetSource) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(targetSource, { visualizePathStyle: { stroke: '#ffaa00' } });
             }
         }
     }

@@ -1,16 +1,14 @@
 import { Harvester } from "role.harvester";
 
 export class Upgrader extends Harvester {
-
     identifier: string = "upgrader";
-    body: BodyPartConstant[] = [WORK, MOVE, CARRY];
 
     want(room: Room) {
-        return 11 - room.controller!.level;
+        return room.controller!.level;
     }
 
     need(room: Room) {
-        return 2;
+        return 1;
     }
 
     max(room: Room) {
@@ -20,17 +18,20 @@ export class Upgrader extends Harvester {
     /** @param {Creep} creep **/
     run(creep: Creep) {
         this.prepareRun(creep);
+        if (creep.memory.upgrading == null)
+            creep.memory.upgrading = false;
 
         var room = Game.rooms[creep.memory.room];
         var targetSource = room.find(FIND_SOURCES).filter(source => source.id == creep.memory.source)[0];
 
         if (creep.memory.upgrading && creep.carry.energy == 0) {
             creep.memory.upgrading = false;
-            creep.say('🔄 harvest');
+            creep.memory.tempRole = undefined;
+            creep.say('🚜');
         }
         if (!creep.memory.upgrading && (creep.carryCapacity - creep.carry.energy) == 0) {
             creep.memory.upgrading = true;
-            creep.say('⚡ upgrade');
+            creep.say('⚡');
         }
 
         if (creep.memory.upgrading) {

@@ -1,12 +1,11 @@
 import { Harvester } from "role.harvester";
+import { Role } from "role";
 
 export class Builder extends Harvester {
-
     identifier: string = "builder";
-    body: BodyPartConstant[] = [WORK, MOVE, CARRY];
 
     want(room: Room) {
-        return (room.controller!.level - 1) * 2;
+        return (room.controller!.level - 1) * 6;
     }
 
     need(room: Room) {
@@ -26,11 +25,12 @@ export class Builder extends Harvester {
 
         if (creep.memory.building && creep.carry.energy == 0) {
             creep.memory.building = false;
-            creep.say('🔄 harvest');
+            creep.memory.tempRole = undefined;
+            creep.say('🚜');
         }
         if (!creep.memory.building && creep.carry.energy == creep.carryCapacity) {
             creep.memory.building = true;
-            creep.say('🚧 build');
+            creep.say('🚧');
         }
 
         if (creep.memory.building) {
@@ -44,7 +44,7 @@ export class Builder extends Harvester {
                 if (!creep.pos.inRangeTo(spawn, 5))
                     creep.moveTo(spawn);
                 else
-                    creep.say("💤 idle");
+                    creep.memory.tempRole = "upgrader"
             }
         }
         else {
